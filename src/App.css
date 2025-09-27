@@ -1,10 +1,120 @@
 .App {
-  text-align: center;
-  padding: 2rem;
-  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
 }
 
-h1 {
-  color: #333;
-  margin-bottom: 1rem;
+.calculator {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+}
+
+.display {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  text-align: right;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.expression {
+  font-size: 14px;
+  color: #6c757d;
+  min-height: 20px;
+  word-break: break-all;
+}
+
+.result {
+  font-size: 36px;
+  font-weight: 600;
+  color: #212529;
+  margin-top: 8px;
+  word-break: break-all;
+}
+
+.mode-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mode-toggle button {
+  flex: 1;
+  padding: 8px;
+  border: 2px solid #dee2e6;
+  background: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-toggle button.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.keypad button {
+  padding: 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #f8f9fa;
+  color: #212529;
+  transition: all 0.2s;
+}
+
+.keypad button:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+}
+
+.keypad button:active {
+  transform: translateY(0);
+}
+
+.keypad button.operator {
+  background: #007bff;
+  color: white;
+}
+
+.keypad button.operator:hover {
+  background: #0056b3;
+}
+
+.keypad button.function {
+  background: #6c757d;
+  color: white;
+}
+
+.keypad button.function:hover {
+  background: #545b62;
+}
+
+.keypad button.equals {
+  background: #28a745;
+}
+
+.keypad button.equals:hover {
+  background: #218838;
 }
