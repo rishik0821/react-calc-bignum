@@ -312,15 +312,11 @@ If you find a bug, please open an issue with:
 
 ---
 
-## 📄 License
 
-This project is open source and available under the [MIT License](LICENSE).
-
----
 
 ## 👤 Author
 
-**Your Name**
+**Sai RIshik**
 
 - GitHub: [@rishik0821](https://github.com/rishik0821)
 - Project Link: [https://github.com/rishik0821/react-calc-bignum](https://github.com/rishik0821/react-calc-bignum)
