@@ -15,16 +15,26 @@ function App() {
 
   const formatResult = (value) => {
     try {
-      const num = math.bignumber(value);
-      const rounded = math.format(num, { precision: 14 });
-      const parts = rounded.split(".");
+      const str = value.toString();
 
-      if (parts.length === 2) {
-        const decimals = parts[1].substring(0, 5);
-        const trimmed = decimals.replace(/0+$/, "");
-        return trimmed ? `${parts[0]}.${trimmed}` : parts[0];
+      // If it's a whole number, return as is
+      if (!str.includes(".") && !str.includes("e")) {
+        return str;
       }
-      return parts[0];
+
+      // If it has decimals, round to 5 places and trim trailing zeros
+      const num = parseFloat(str);
+      if (isFinite(num)) {
+        const rounded = Math.round(num * 100000) / 100000;
+        const formatted = rounded.toString();
+
+        if (formatted.includes(".")) {
+          return formatted.replace(/\.?0+$/, "");
+        }
+        return formatted;
+      }
+
+      return str;
     } catch {
       return value.toString();
     }
@@ -75,9 +85,13 @@ function App() {
     } else if (fn === "∛") {
       func = "cbrt(";
     } else if (fn === "ⁿ√") {
-      func = "nthRoot(";
+      setExpression(expression + "nthRoot(");
+      setDisplay("ⁿ√");
+      return;
     } else if (fn === "xⁿ") {
-      func = "pow(";
+      setExpression(expression + "pow(");
+      setDisplay("xⁿ");
+      return;
     } else {
       func = fn + "(";
     }
@@ -97,7 +111,6 @@ function App() {
     try {
       let expr = expression;
 
-      // Convert degrees to radians if needed
       if (!isRadians) {
         expr = expr.replace(/sin\(/g, "sin((pi/180)*");
         expr = expr.replace(/cos\(/g, "cos((pi/180)*");
@@ -176,9 +189,9 @@ function App() {
   };
 
   return (
-    <div className="App">
+    <div className="app-container">
       <div className="calculator">
-        <div className="display">
+        <div className="display-container">
           <div className="expression">{expression || "0"}</div>
           <div className="result">{display}</div>
         </div>
@@ -199,58 +212,109 @@ function App() {
         </div>
 
         <div className="keypad">
-          <button onClick={handleClear} className="function">
-            C
+          <button onClick={handleClear} className="btn-function">
+            AC
           </button>
-          <button onClick={() => handleParenthesis("(")} className="function">
+          <button
+            onClick={() => handleParenthesis("(")}
+            className="btn-function"
+          >
             (
           </button>
-          <button onClick={() => handleParenthesis(")")} className="function">
+          <button
+            onClick={() => handleParenthesis(")")}
+            className="btn-function"
+          >
             )
           </button>
-          <button onClick={handleBackspace} className="function">
+          <button onClick={handleBackspace} className="btn-operator">
             ⌫
           </button>
 
-          <button onClick={() => handleFunction("sin")}>sin</button>
-          <button onClick={() => handleFunction("cos")}>cos</button>
-          <button onClick={() => handleFunction("tan")}>tan</button>
-          <button onClick={() => handleOperator("÷")} className="operator">
+          <button
+            onClick={() => handleFunction("sin")}
+            className="btn-function"
+          >
+            sin
+          </button>
+          <button
+            onClick={() => handleFunction("cos")}
+            className="btn-function"
+          >
+            cos
+          </button>
+          <button
+            onClick={() => handleFunction("tan")}
+            className="btn-function"
+          >
+            tan
+          </button>
+          <button onClick={() => handleOperator("÷")} className="btn-operator">
             ÷
           </button>
 
-          <button onClick={() => handleFunction("√")}>√</button>
-          <button onClick={() => handleFunction("∛")}>∛</button>
-          <button onClick={() => handleFunction("ⁿ√")}>ⁿ√</button>
-          <button onClick={() => handleOperator("×")} className="operator">
+          <button onClick={() => handleFunction("√")} className="btn-function">
+            √
+          </button>
+          <button onClick={() => handleFunction("∛")} className="btn-function">
+            ∛
+          </button>
+          <button onClick={() => handleFunction("ⁿ√")} className="btn-function">
+            ⁿ√
+          </button>
+          <button onClick={() => handleOperator("×")} className="btn-operator">
             ×
           </button>
 
-          <button onClick={() => handleNumber("7")}>7</button>
-          <button onClick={() => handleNumber("8")}>8</button>
-          <button onClick={() => handleNumber("9")}>9</button>
-          <button onClick={() => handleOperator("-")} className="operator">
+          <button onClick={() => handleNumber("7")} className="btn-number">
+            7
+          </button>
+          <button onClick={() => handleNumber("8")} className="btn-number">
+            8
+          </button>
+          <button onClick={() => handleNumber("9")} className="btn-number">
+            9
+          </button>
+          <button onClick={() => handleOperator("-")} className="btn-operator">
             −
           </button>
 
-          <button onClick={() => handleNumber("4")}>4</button>
-          <button onClick={() => handleNumber("5")}>5</button>
-          <button onClick={() => handleNumber("6")}>6</button>
-          <button onClick={() => handleOperator("+")} className="operator">
+          <button onClick={() => handleNumber("4")} className="btn-number">
+            4
+          </button>
+          <button onClick={() => handleNumber("5")} className="btn-number">
+            5
+          </button>
+          <button onClick={() => handleNumber("6")} className="btn-number">
+            6
+          </button>
+          <button onClick={() => handleOperator("+")} className="btn-operator">
             +
           </button>
 
-          <button onClick={() => handleNumber("1")}>1</button>
-          <button onClick={() => handleNumber("2")}>2</button>
-          <button onClick={() => handleNumber("3")}>3</button>
-          <button onClick={() => handleOperator("^")} className="operator">
+          <button onClick={() => handleNumber("1")} className="btn-number">
+            1
+          </button>
+          <button onClick={() => handleNumber("2")} className="btn-number">
+            2
+          </button>
+          <button onClick={() => handleNumber("3")} className="btn-number">
+            3
+          </button>
+          <button onClick={() => handleOperator("^")} className="btn-operator">
             ^
           </button>
 
-          <button onClick={handleNegate}>±</button>
-          <button onClick={() => handleNumber("0")}>0</button>
-          <button onClick={handleDecimal}>.</button>
-          <button onClick={handleEquals} className="operator equals">
+          <button onClick={handleNegate} className="btn-number">
+            ±
+          </button>
+          <button onClick={() => handleNumber("0")} className="btn-number">
+            0
+          </button>
+          <button onClick={handleDecimal} className="btn-number">
+            .
+          </button>
+          <button onClick={handleEquals} className="btn-equals">
             =
           </button>
         </div>
