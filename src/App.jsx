@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { create, all } from "mathjs";
 import "./App.css";
 
@@ -10,25 +10,62 @@ const math = create(all, {
 function App() {
   const [display, setDisplay] = useState("0");
   const [expression, setExpression] = useState("");
+  const [lastExpression, setLastExpression] = useState("");
   const [isRadians, setIsRadians] = useState(true);
   const [error, setError] = useState(false);
+  const [nthRootN, setNthRootN] = useState(null); // Store the "n" for nth root
+
+  // Keyboard support
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key >= "0" && e.key <= "9") {
+        handleNumber(e.key);
+      } else if (e.key === "+" || e.key === "-") {
+        handleOperator(e.key);
+      } else if (e.key === "*") {
+        handleOperator("×");
+      } else if (e.key === "/") {
+        e.preventDefault();
+        handleOperator("÷");
+      } else if (e.key === "^") {
+        handleOperator("^");
+      } else if (e.key === "(" || e.key === ")") {
+        handleParenthesis(e.key);
+      } else if (e.key === ".") {
+        handleDecimal();
+      } else if (e.key === "Enter" || e.key === "=") {
+        e.preventDefault();
+        handleEquals();
+      } else if (e.key === "Escape" || e.key === "c" || e.key === "C") {
+        handleClear();
+      } else if (e.key === "Backspace") {
+        handleBackspace();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [display, expression, error, isRadians, lastExpression, nthRootN]);
+
+  // Auto-recalculate when mode changes
+  useEffect(() => {
+    if (lastExpression && !error) {
+      recalculate();
+    }
+  }, [isRadians]);
 
   const formatResult = (value) => {
     try {
-      // Convert BigNumber to string without scientific notation
       const str = value.toString();
 
-      // If it contains 'e', it's scientific - convert to full number
       if (str.includes("e")) {
         return math.format(value, { notation: "fixed" });
       }
 
-      // If it's a whole number, return as is
       if (!str.includes(".")) {
         return str;
       }
 
-      // If it has decimals, round to 5 places max and trim zeros
       const parts = str.split(".");
       if (parts[1]) {
         const decimals = parts[1].substring(0, 5).replace(/0+$/, "");
@@ -41,20 +78,55 @@ function App() {
     }
   };
 
+  const recalculate = () => {
+    try {
+      let expr = lastExpression;
+
+      if (!isRadians) {
+        expr = expr.replace(/sin\(/g, "sin((pi/180)*");
+        expr = expr.replace(/cos\(/g, "cos((pi/180)*");
+        expr = expr.replace(/tan\(/g, "tan((pi/180)*");
+      }
+
+      const result = math.evaluate(expr);
+      const formatted = formatResult(result);
+      setDisplay(formatted);
+      setExpression(formatted);
+    } catch (err) {
+      // Keep current display if recalculation fails
+    }
+  };
+
   const handleNumber = (num) => {
     if (error) {
       setError(false);
       setDisplay(num);
       setExpression(num);
+      setLastExpression("");
+      setNthRootN(null);
+      return;
+    }
+
+    if (nthRootN !== null) {
+      // We're entering the number to take nth root of
+      if (display === "0" || display.includes("√")) {
+        setDisplay(num);
+        setExpression(num);
+      } else {
+        setDisplay(display + num);
+        setExpression(expression + num);
+      }
       return;
     }
 
     if (display === "0" || display === "Error") {
       setDisplay(num);
       setExpression(num);
+      setLastExpression("");
     } else {
       setDisplay(display + num);
       setExpression(expression + num);
+      setLastExpression("");
     }
   };
 
@@ -63,6 +135,8 @@ function App() {
       setError(false);
       setExpression(display + op);
       setDisplay(op);
+      setLastExpression("");
+      setNthRootN(null);
       return;
     }
 
@@ -70,6 +144,8 @@ function App() {
     const mathOp = ops[op] || op;
     setExpression(expression + mathOp);
     setDisplay(op);
+    setLastExpression("");
+    setNthRootN(null);
   };
 
   const handleFunction = (fn) => {
@@ -77,28 +153,45 @@ function App() {
       setError(false);
       setExpression("");
       setDisplay("0");
+      setLastExpression("");
+      setNthRootN(null);
       return;
     }
 
     let func = fn;
     if (fn === "√") {
       func = "sqrt(";
+      setExpression(expression + func);
+      setDisplay(fn);
+      setLastExpression("");
+      setNthRootN(null);
     } else if (fn === "∛") {
       func = "cbrt(";
+      setExpression(expression + func);
+      setDisplay(fn);
+      setLastExpression("");
+      setNthRootN(null);
     } else if (fn === "ⁿ√") {
-      setExpression(expression + "nthRoot(");
-      setDisplay("ⁿ√");
+      // Store current number as "n" for nth root
+      const n = expression || display || "2";
+      setNthRootN(n);
+      setDisplay(`${n}√`);
+      setExpression("");
+      setLastExpression("");
       return;
     } else if (fn === "xⁿ") {
       setExpression(expression + "pow(");
-      setDisplay("xⁿ");
+      setDisplay("xⁿ(");
+      setLastExpression("");
+      setNthRootN(null);
       return;
     } else {
       func = fn + "(";
+      setExpression(expression + func);
+      setDisplay(fn);
+      setLastExpression("");
+      setNthRootN(null);
     }
-
-    setExpression(expression + func);
-    setDisplay(fn);
   };
 
   const handleEquals = () => {
@@ -106,11 +199,31 @@ function App() {
       setError(false);
       setExpression("");
       setDisplay("0");
+      setLastExpression("");
+      setNthRootN(null);
       return;
     }
 
     try {
       let expr = expression;
+
+      // Handle nth root if active
+      if (nthRootN !== null) {
+        expr = `nthRoot(${expression}, ${nthRootN})`;
+        setNthRootN(null);
+      }
+
+      // Auto-close unclosed parentheses
+      const openParens = (expr.match(/\(/g) || []).length;
+      const closeParens = (expr.match(/\)/g) || []).length;
+      const missingParens = openParens - closeParens;
+
+      if (missingParens > 0) {
+        expr += ")".repeat(missingParens);
+      }
+
+      // Store original expression for recalculation
+      setLastExpression(expr);
 
       if (!isRadians) {
         expr = expr.replace(/sin\(/g, "sin((pi/180)*");
@@ -125,13 +238,17 @@ function App() {
     } catch (err) {
       setDisplay("Error");
       setError(true);
+      setLastExpression("");
+      setNthRootN(null);
     }
   };
 
   const handleClear = () => {
     setDisplay("0");
     setExpression("");
+    setLastExpression("");
     setError(false);
+    setNthRootN(null);
   };
 
   const handleBackspace = () => {
@@ -143,9 +260,12 @@ function App() {
     if (display.length > 1) {
       setDisplay(display.slice(0, -1));
       setExpression(expression.slice(0, -1));
+      setLastExpression("");
     } else {
       setDisplay("0");
       setExpression("");
+      setLastExpression("");
+      setNthRootN(null);
     }
   };
 
@@ -160,6 +280,7 @@ function App() {
       setExpression(
         expression.startsWith("-") ? expression.slice(1) : "-" + expression
       );
+      setLastExpression("");
     }
   };
 
@@ -168,12 +289,15 @@ function App() {
       setError(false);
       setDisplay("0.");
       setExpression("0.");
+      setLastExpression("");
+      setNthRootN(null);
       return;
     }
 
     if (!display.includes(".")) {
       setDisplay(display + ".");
       setExpression(expression + ".");
+      setLastExpression("");
     }
   };
 
@@ -182,18 +306,25 @@ function App() {
       setError(false);
       setExpression(paren);
       setDisplay(paren);
+      setLastExpression("");
+      setNthRootN(null);
       return;
     }
 
     setExpression(expression + paren);
     setDisplay(paren);
+    setLastExpression("");
   };
 
   return (
     <div className="app-container">
       <div className="calculator">
         <div className="display-container">
-          <div className="expression">{expression || "0"}</div>
+          <div className="expression">
+            {expression || nthRootN
+              ? `${nthRootN || ""}${nthRootN ? "√" : ""}${expression}`
+              : "0"}
+          </div>
           <div className="result">{display}</div>
         </div>
 
