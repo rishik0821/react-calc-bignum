@@ -15,23 +15,24 @@ function App() {
 
   const formatResult = (value) => {
     try {
+      // Convert BigNumber to string without scientific notation
       const str = value.toString();
 
+      // If it contains 'e', it's scientific - convert to full number
+      if (str.includes("e")) {
+        return math.format(value, { notation: "fixed" });
+      }
+
       // If it's a whole number, return as is
-      if (!str.includes(".") && !str.includes("e")) {
+      if (!str.includes(".")) {
         return str;
       }
 
-      // If it has decimals, round to 5 places and trim trailing zeros
-      const num = parseFloat(str);
-      if (isFinite(num)) {
-        const rounded = Math.round(num * 100000) / 100000;
-        const formatted = rounded.toString();
-
-        if (formatted.includes(".")) {
-          return formatted.replace(/\.?0+$/, "");
-        }
-        return formatted;
+      // If it has decimals, round to 5 places max and trim zeros
+      const parts = str.split(".");
+      if (parts[1]) {
+        const decimals = parts[1].substring(0, 5).replace(/0+$/, "");
+        return decimals ? `${parts[0]}.${decimals}` : parts[0];
       }
 
       return str;
